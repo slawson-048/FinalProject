@@ -1,0 +1,135 @@
+---
+title:  'Final Project - Sentiment Analysis'
+subtitle: 'INFO 523'
+author:
+- name: Student -  Sasha Lawson
+  affiliation: Data Science Masters
+- name: Instructor -  Cristian Román-Palacios
+  affiliation: School of Information, University of Arizona, Tucson, AZ
+output: html_document
+---
+
+---------------
+
+### Objectives
+You are expected to present a data mining application/algorithm/method not covered in class.
+
+---------------
+
+
+### Code
+
+```{r Imports}
+
+# Import Libraries
+library(tm)
+library(readxl)
+library(syuzhet)
+library(tidytext)
+library(wordcloud2)
+
+# Import Dataset 
+tweets <- read_excel("data/Tweets.xlsx", sheet = "Tweets")
+head(tweets)
+
+```
+
+```{r corpusConfig}
+
+# Stem words to their roots based on the English language
+tweets$Tweet <- stemDocument(tweets$Tweet, language = "english")
+
+# Convert dataset to corpus as the "tm_map()" function takes corpora
+converted <- iconv(tweets$Tweet)
+corpus <- Corpus(VectorSource(converted))
+
+# Take all letters to lowercase
+corpus <- tm_map(corpus, tolower)
+
+# Remove all punctuation
+corpus <- tm_map(corpus, removePunctuation)
+
+# Remove all numbers
+corpus <- tm_map(corpus, removeNumbers)
+
+# Remove all stop words based on the function "stopwords('english')"
+corpus <- tm_map(corpus, removeWords, stopwords('english'))
+
+```
+
+```{r StopWordsExample}
+
+# Display stop words
+print(stopwords('english'))
+
+```
+
+```{r WordCloud}
+
+# Converting back to matrix for visualization
+doc <- TermDocumentMatrix(corpus)
+words <- as.matrix(doc)
+
+# Setting word count minimum to show at 50+
+wordCount <- rowSums(words)
+wordCount <- subset(wordCount, wordCount >= 50)
+
+wordCount <- data.frame(names(wordCount), wordCount)
+colnames(wordCount) <- c('word', 'freq')
+wordcloud2(wordCount,
+           size = 0.7,
+           shape = 'triangle',
+           rotateRatio = 0.5,
+           minSize = 1)
+
+```
+
+
+```{r NRCExample1}
+
+# Compare with NRC lexicon
+s1 <- get_nrc_sentiment("I hate Mondays.")
+barplot(colSums(s1),
+        las = 2,
+        col = rainbow(10),
+        ylab = 'Count',
+        main = 'Sentiment Example 1 - Negative')
+
+```
+
+```{r NRCExample2}
+
+# Compare with NRC lexicon
+s2 <- get_nrc_sentiment("I love Fridays.")
+barplot(colSums(s2),
+        las = 2,
+        col = rainbow(10),
+        ylab = 'Count',
+        main = 'Sentiment Example 2 - Positive')
+
+```
+
+```{r NRC}
+
+# Convert to proper form
+corpus <- tidy(doc)
+
+# Compare with NRC lexicon
+sentiment <- get_nrc_sentiment(corpus$term)
+barplot(colSums(sentiment),
+        las = 2,
+        col = rainbow(10),
+        ylab = 'Count',
+        main = 'Sentiment Analysis - Tweets')
+
+```
+
+---------------
+
+### Useful Sources:
+
+Data Centric Inc. (2022). YouTube. Retrieved April 30, 2023, from https://www.youtube.com/watch?v=c7YSyCofH3o&t=695s&ab_channel=DataCentricInc.
+
+Sentiment analysis in R: R-bloggers. R-bloggers. (n.d.). Retrieved April 30, 2023, from https://www.r-bloggers.com/2021/05/sentiment-analysis-in-r-3
+
+---------------
